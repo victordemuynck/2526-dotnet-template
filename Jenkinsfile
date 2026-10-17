@@ -1,24 +1,31 @@
 pipeline {
-    agent any 
+    agent any
     stages {
-        stage('Preparation') {
-            steps {
-                catchError(buildResult: 'SUCCESS') {
-                    sh 'docker stop rise-app'
-                    sh 'docker rm rise-app'
-                }
-            }
-        }
-        stage('Build & Test') {
+        stage('Build') {
             agent {
-                docker { 
+                docker {
                     image 'mcr.microsoft.com/dotnet/sdk:9.0'
                     reuseNode true
                 }
             }
             steps {
                 sh 'dotnet build'
-                sh 'dotnet test'
+            }
+        }
+        stage('Test') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/dotnet/sdk:9.0'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh 'dotnet test --no-build'
+            }
+        }
+        stage('Cleanup') {
+            steps {
+                sh 'docker rm -f rise-app || true'
             }
         }
         stage('Deploy') {
